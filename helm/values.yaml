@@ -1,0 +1,66 @@
+analyzer:
+  analyzer:
+    image:
+      repository: ghcr.io/userjack6880/open-dmarc-analyzer
+      tag: latest
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  replicas: 1
+  type: ClusterIP
+  config:
+    geoEnable: "0"
+mariadb:
+  mariadb:
+    image:
+      repository: mariadb
+      tag: latest
+  replicas: 1
+  ports:
+  - name: "3306"
+    port: 3306
+    targetPort: 3306
+  config:
+    mariadbDatabase: dmarc
+    mariadbPassword: dmarc
+    mariadbRootPassword: superlongpasswordforroot
+    mariadbUser: dmarc
+parser:
+  parser:
+    image:
+      repository: ghcr.io/userjack6880/open-report-parser
+      tag: latest
+  replicas: 1
+  config:
+    imapauth: simple
+    imapdmarcerr: INBOX/Not Processed
+    imapdmarcfolder: INBOX
+    imapdmarcproc: INBOX/Processed
+    imapignoreerror: "1"
+    imappass: yourpasswordhere
+    imapport: "993"
+    imapserver: email.example.com
+    imapssl: "1"
+    imapuser: youremailhere@example.com
+pvc:
+  mariadbPvc:
+    storageRequest: 100Mi
+ingress:
+  # -- Enable Ingress
+  enabled: true
+  # -- Ingress class type
+  className: nginx
+  # -- Ingress annotations
+  annotations:
+  hosts:
+    # -- Ingress hostname to bind
+    - host: oda.localdev.me
+      # -- Ingress host paths
+      paths:
+        - /
+  # -- Enable TLS
+  tls:
+    # - hosts:
+    #   - oda.localdev.me
+    #   secretName: external-tls-cert

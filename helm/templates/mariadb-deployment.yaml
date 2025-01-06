@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "open-dmarc-analyzer.fullname" . }}-mariadb
+  labels:
+    io.kompose.service: mariadb
+  {{- include "open-dmarc-analyzer.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.mariadb.replicas }}
+  selector:
+    matchLabels:
+      io.kompose.service: mariadb
+    {{- include "open-dmarc-analyzer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        io.kompose.service: mariadb
+      {{- include "open-dmarc-analyzer.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: mariadb
+          envFrom:
+            - secretRef:
+                name: {{ include "open-dmarc-analyzer.fullname" . }}-mariadb-secret
+          image: {{ .Values.mariadb.mariadb.image.repository }}:{{ .Values.mariadb.mariadb.image.tag | default .Chart.AppVersion }}
+          livenessProbe:
+            exec:
+              command:
+              - healthcheck.sh
+              - --su-mysql
+              - --connect
+              - --innodb_initialized
+            failureThreshold: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+          - mountPath: /var/lib/mysql
+            name: mariadb-pvc
+      restartPolicy: Always
+      volumes:
+      - name: mariadb-pvc
+        persistentVolumeClaim:
+          claimName: {{ include "open-dmarc-analyzer.fullname" . }}-mariadb-pvc

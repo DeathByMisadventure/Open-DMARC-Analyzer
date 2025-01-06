@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "open-dmarc-analyzer.fullname" . }}-parser
+  labels:
+    io.kompose.service: parser
+  {{- include "open-dmarc-analyzer.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.parser.replicas }}
+  selector:
+    matchLabels:
+      io.kompose.service: parser
+    {{- include "open-dmarc-analyzer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        io.kompose.service: parser
+      {{- include "open-dmarc-analyzer.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: parser
+        envFrom:
+        - secretRef:
+            name: {{ include "open-dmarc-analyzer.fullname" . }}-parser-secret
+        image: {{ .Values.parser.parser.image.repository }}:{{ .Values.parser.parser.image.tag | default .Chart.AppVersion }}
+      restartPolicy: Always
